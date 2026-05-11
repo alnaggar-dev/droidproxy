@@ -7,6 +7,7 @@ const specs = [
   { label: 'Auth model', value: 'Native OAuth', small: 'no API keys to provision' },
   { label: 'Built on', value: 'CLIProxyAPIPlus', small: 'router-for-me · MIT' },
   { label: 'Distribution', value: 'Notarized .dmg', small: 'Sparkle delta updates' },
+  { label: 'Usage tracking', value: 'Built-in', small: 'Claude · Codex · 5-min refresh' },
 ]
 
 export default function SpecsSection() {

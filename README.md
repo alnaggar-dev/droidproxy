@@ -20,6 +20,7 @@ All releases are code-signed and notarized by Apple. Existing installs auto-upda
 - **One-click OAuth auth** -- Claude Code, Codex, and Gemini login from the menu bar, credential monitoring, auto-refresh
 - **Per-model reasoning/effort controls** -- Configure Opus 4.7, Sonnet 4.6, GPT 5.3 Codex, GPT 5.4, GPT 5.5, Gemini 3.1 Pro, and Gemini 3 Flash directly from the Settings window. Also supports `fast` mode for gpt models.
 - **Max Budget Mode** -- Nuclear launch button that forces maximum reasoning on Opud/Sonnet 4.6 requests: classic extended thinking with `budget_tokens: 63999`, `max_tokens: 64000`, and `effort: max`. Opus 4.7 does not need this override. Full thinking power for Sonnet, your quota's problem.
+- **Usage tracking** -- Live Claude and Codex rate limit windows (5-hour + weekly) in the menu bar dropdown. Auto-refreshes every 5 minutes (configurable) and on Mac wake. Codex tracking requires the `codex` CLI to be installed and logged in (`codex login`).
 
 <p align="center">
   <img src="settings-screenshot.png" alt="DroidProxy Settings" width="420">
@@ -58,6 +59,10 @@ src/
 │   ├── TunnelManager.swift     # Network tunnel management
 │   ├── IconCatalog.swift       # Icon loading & caching
 │   ├── NotificationNames.swift # Notification constants
+│   ├── ClaudeUsageProbe.swift  # Claude rate-limit fetcher
+│   ├── CodexUsageProbe.swift   # Codex rate-limit fetcher (via codex app-server)
+│   ├── UsageStore.swift        # Coordinates probes + auto-refresh
+│   ├── UsageModels.swift       # Usage window data types
 │   └── Resources/
 │       ├── cli-proxy-api-plus  # CLIProxyAPIPlus binary
 │       ├── config.yaml         # Server config

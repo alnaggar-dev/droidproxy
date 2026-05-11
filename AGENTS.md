@@ -122,7 +122,11 @@ Behavior to know:
 | `src/Sources/ThinkingProxy.swift` | Raw TCP HTTP proxy for thinking injection plus Amp request/response rewriting. |
 | `src/Sources/SettingsView.swift` | SwiftUI settings UI for server status, launch-at-login, provider toggles, auth flows, and per-model effort pickers. |
 | `src/Sources/AuthStatus.swift` | `AuthManager`, account parsing, expiry detection, file deletion, and per-account disabled-state updates. |
-| `src/Sources/AppPreferences.swift` | UserDefaults-backed effort preferences for Opus 4.7, Sonnet 4.6, GPT 5.3 Codex, GPT 5.4, Gemini 3.1 Pro, and Gemini 3 Flash, plus fast mode toggles. |
+| `src/Sources/AppPreferences.swift` | UserDefaults-backed effort preferences for Opus 4.7, Sonnet 4.6, GPT 5.3 Codex, GPT 5.4, Gemini 3.1 Pro, and Gemini 3 Flash, plus fast mode toggles and the usage probe controls (`showUsageInMenuBar`, `usageAutoRefreshSeconds`). |
+| `src/Sources/ClaudeUsageProbe.swift` | Hits `https://api.anthropic.com/api/oauth/usage` with the access token from `~/.cli-proxy-api/claude-*.json`. Handles OAuth refresh against `platform.claude.com/v1/oauth/token` (atomic write back to the auth file) and decodes the flat-keyed response shape (`five_hour`, `seven_day_*`). |
+| `src/Sources/CodexUsageProbe.swift` | Spawns `codex -s read-only -a untrusted app-server` as a child process and issues line-delimited JSON-RPC (`initialize` + `account/rateLimits/read`) to read Codex/ChatGPT rate limit windows. Requires the `codex` CLI to be installed and logged in. |
+| `src/Sources/UsageStore.swift` | `@MainActor` singleton that fan-outs to both probes in parallel, debounces overlapping refreshes (cancels in-flight task before starting a new one), and schedules a repeating timer based on `AppPreferences.usageAutoRefreshSeconds` (skips scheduling when set to 0/Manual). Posts `usageUpdated` notifications for UI consumers. |
+| `src/Sources/UsageModels.swift` | `UsageWindowKind`, `UsageWindow`, and `ProviderUsageSnapshot` data types shared by the probes and `AppDelegate`. Probes leave `limit` / `used` at `0` since the upstream APIs return only `percentUsed`. |
 | `src/Sources/Resources/config.yaml` | Bundled CLIProxyAPIPlus config (`port: 8318`, localhost binding, Amp upstream settings, auth dir). |
 | `src/Info.plist` | Bundle metadata. Current source-of-truth values include app name `DroidProxy`, bundle ID `com.droidproxy.app`, and Sparkle feed URL on `anand-92/droidproxy`. |
 
