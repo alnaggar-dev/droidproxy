@@ -518,12 +518,14 @@ struct SettingsView: View {
     @AppStorage(AppPreferences.gpt55FastModeKey) private var gpt55FastMode = AppPreferences.defaultGpt55FastMode
     @AppStorage(AppPreferences.gemini31ProThinkingLevelKey) private var gemini31ProThinkingLevel = AppPreferences.defaultGemini31ProThinkingLevel
     @AppStorage(AppPreferences.gemini3FlashThinkingLevelKey) private var gemini3FlashThinkingLevel = AppPreferences.defaultGemini3FlashThinkingLevel
+    @AppStorage(AppPreferences.k26ReasoningEnabledKey) private var k26ReasoningEnabled = AppPreferences.defaultK26ReasoningEnabled
     @AppStorage(AppPreferences.allowRemoteKey) private var allowRemote = AppPreferences.defaultAllowRemote
     @AppStorage(AppPreferences.secretKeyKey) private var secretKey = AppPreferences.defaultSecretKey
     @AppStorage(AppPreferences.claudeMaxBudgetModeKey) private var claudeMaxBudgetMode = AppPreferences.defaultClaudeMaxBudgetMode
     @AppStorage(AppPreferences.showUsageInMenuBarKey) private var showUsageInMenuBar = AppPreferences.defaultShowUsageInMenuBar
     @AppStorage(AppPreferences.usageAutoRefreshSecondsKey) private var usageAutoRefreshSeconds = AppPreferences.defaultUsageAutoRefreshSeconds
     @AppStorage(AppPreferences.oledThemeKey) private var oledTheme = AppPreferences.defaultOledTheme
+    @AppStorage(AppPreferences.backgroundOpacityKey) private var backgroundOpacity = AppPreferences.defaultBackgroundOpacity
     @AppStorage(AppPreferences.factoryAdvancedModelsKey) private var factoryAdvancedModels = AppPreferences.defaultFactoryAdvancedModels
     @State private var authenticatingService: ServiceType? = nil
     @State private var showingAuthResult = false
@@ -546,6 +548,7 @@ struct SettingsView: View {
     private let claudeEffortSelectionColor = Color(red: 0xD9/255, green: 0x77/255, blue: 0x57/255)
     private let codexEffortSelectionColor = Color(red: 0x74/255, green: 0xAA/255, blue: 0x9C/255)
     private let geminiEffortSelectionColor = Color(red: 0x42/255, green: 0x85/255, blue: 0xF4/255)
+    private let kimiEffortSelectionColor = Color(red: 0x00/255, green: 0xBF/255, blue: 0x91/255)
     private let oledWindowBackground = Color.black
     private let oledSectionBackground = Color(red: 0x12/255, green: 0x12/255, blue: 0x12/255)
     private let oledFooterText = Color(red: 0xA8/255, green: 0xA8/255, blue: 0xA8/255)
@@ -604,30 +607,42 @@ struct SettingsView: View {
                     .padding(.top, 36) // leave room for the transparent titlebar traffic-lights
                     .padding(.bottom, 4)
                     .frame(maxWidth: .infinity)
-                Button {
-                    oledTheme.toggle()
-                    NotificationCenter.default.post(name: .droidProxyThemeChanged, object: nil)
-                } label: {
-                    Image(systemName: oledTheme ? "sun.max.fill" : "moon.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(oledTheme ? Color.yellow.opacity(0.9) : Color.white.opacity(0.75))
-                        .frame(width: 26, height: 26)
-                        .background(
-                            Circle()
-                                .fill(Color.white.opacity(oledTheme ? 0.06 : 0.10))
-                        )
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
-                        )
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "circle.lefthalf.filled")
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(Color.white.opacity(0.40))
+                        Slider(value: $backgroundOpacity, in: 0.10...1.0)
+                            .frame(width: 60)
+                            .controlSize(.mini)
+                            .tint(Color.white.opacity(0.55))
+                    }
+                    .help("Adjust background opacity (100% = fully opaque)")
+                    Button {
+                        oledTheme.toggle()
+                        NotificationCenter.default.post(name: .droidProxyThemeChanged, object: nil)
+                    } label: {
+                        Image(systemName: oledTheme ? "sun.max.fill" : "moon.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(oledTheme ? Color.yellow.opacity(0.9) : Color.white.opacity(0.75))
+                            .frame(width: 26, height: 26)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(oledTheme ? 0.06 : 0.10))
+                            )
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .help(oledTheme ? "Switch to Liquid Glass theme" : "Switch to OLED black theme")
+                    .onHover { inside in
+                        if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
                 }
-                .buttonStyle(.plain)
                 .padding(.top, 12)
                 .padding(.trailing, 12)
-                .help(oledTheme ? "Switch to Liquid Glass theme" : "Switch to OLED black theme")
-                .onHover { inside in
-                    if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                }
             }
 
             Form {
@@ -1100,6 +1115,37 @@ struct SettingsView: View {
                         }
                         .padding(.leading, 28)
                     }
+
+                    ServiceRow(
+                        serviceType: .kimi,
+                        iconName: "icon-kimi.svg",
+                        accounts: authManager.accounts(for: .kimi),
+                        isAuthenticating: authenticatingService == .kimi,
+                        helpText: nil,
+                        isEnabled: serverManager.isProviderEnabled("kimi"),
+                        customTitle: nil,
+                        onConnect: { connectService(.kimi) },
+                        onDisconnect: { account in disconnectAccount(account) },
+                        onToggleDisabled: { account in toggleAccountDisabled(account) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("kimi", enabled: enabled) },
+                        toggleTint: kimiEffortSelectionColor,
+                        onExpandChange: { expanded in expandedRowCount += expanded ? 1 : -1 }
+                    ) { EmptyView() }
+
+                    if serverManager.isProviderEnabled("kimi") {
+                        HStack {
+                            Text("K2.6 reasoning")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Toggle("", isOn: $k26ReasoningEnabled)
+                                .toggleStyle(.switch)
+                                .controlSize(.mini)
+                                .tint(kimiEffortSelectionColor)
+                                .labelsHidden()
+                        }
+                        .padding(.leading, 28)
+                    }
                 }
                 .listRowBackground(glassRowBackground)
             }
@@ -1158,50 +1204,34 @@ struct SettingsView: View {
                 if oledTheme {
                     Color.black.ignoresSafeArea()
                 } else {
-                // Layer 1: behind-window blur so the desktop refracts through the
-                // transparent titlebar + translucent rows.
-                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                    .ignoresSafeArea()
-                // Layer 2: dark tint so content stays readable over bright desktops.
-                Color.black.opacity(0.55)
-                    .ignoresSafeArea()
-                // Layer 3: colorful radial accents that the glass rows refract.
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.95, green: 0.45, blue: 0.15).opacity(0.45),
-                        Color.clear
-                    ],
-                    center: .init(x: 0.15, y: 0.1),
-                    startRadius: 10,
-                    endRadius: 420
-                )
-                .ignoresSafeArea()
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.30, green: 0.50, blue: 0.95).opacity(0.35),
-                        Color.clear
-                    ],
-                    center: .init(x: 0.85, y: 0.9),
-                    startRadius: 10,
-                    endRadius: 420
-                )
-                .ignoresSafeArea()
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.90, green: 0.25, blue: 0.35).opacity(0.25),
-                        Color.clear
-                    ],
-                    center: .init(x: 0.9, y: 0.2),
-                    startRadius: 10,
-                    endRadius: 320
-                )
-                .ignoresSafeArea()
-                } // end !oledTheme
+                    if backgroundOpacity < 1.0 {
+                        VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                            .ignoresSafeArea()
+                    }
+                    Color.black.opacity(0.55)
+                        .ignoresSafeArea()
+                    RadialGradient(
+                        colors: [Color(red: 0.95, green: 0.45, blue: 0.15).opacity(0.45), Color.clear],
+                        center: .init(x: 0.15, y: 0.1), startRadius: 10, endRadius: 420
+                    ).ignoresSafeArea()
+                    RadialGradient(
+                        colors: [Color(red: 0.30, green: 0.50, blue: 0.95).opacity(0.35), Color.clear],
+                        center: .init(x: 0.85, y: 0.9), startRadius: 10, endRadius: 420
+                    ).ignoresSafeArea()
+                    RadialGradient(
+                        colors: [Color(red: 0.90, green: 0.25, blue: 0.35).opacity(0.25), Color.clear],
+                        center: .init(x: 0.9, y: 0.2), startRadius: 10, endRadius: 320
+                    ).ignoresSafeArea()
+                }
             }
+            .opacity(backgroundOpacity)
         )
         .accentColor(AccountRowView.accent)
         .preferredColorScheme(.dark)
         .frame(width: 480, height: 814)
+        .onChange(of: backgroundOpacity) { _ in
+            NotificationCenter.default.post(name: .droidProxyThemeChanged, object: nil)
+        }
         .onAppear {
             authManager.checkAuthStatus()
             checkLaunchAtLogin()
@@ -1405,6 +1435,7 @@ struct SettingsView: View {
         case .claude: command = .claudeLogin
         case .codex: command = .codexLogin
         case .gemini: command = .geminiLogin
+        case .kimi: command = .kimiLogin
         }
         
         serverManager.runAuthCommand(command) { success, output in
@@ -1433,6 +1464,8 @@ struct SettingsView: View {
             return "🌐 Browser opened for Codex authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials."
         case .gemini:
             return "🌐 Browser opened for Gemini authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials.\n\nIf having issues, run in terminal:\n/Applications/DroidProxy.app/Contents/Resources/cli-proxy-api-plus --config ~/.cli-proxy-api/merged-config.yaml -login"
+        case .kimi:
+            return "🌐 Browser opened for Kimi authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials."
         }
     }
     

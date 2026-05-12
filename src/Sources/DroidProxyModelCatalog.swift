@@ -5,6 +5,7 @@ enum DroidProxyModelKind {
     case claudeClassic
     case codex
     case gemini
+    case kimi
 }
 
 struct DroidProxyThinkingLevel: Equatable {
@@ -78,6 +79,7 @@ enum DroidProxyModelCatalog {
     private static let claudeAdvancedLevels = [low, medium, high, xhigh, max]
     private static let claudeClassicLevels = [low, medium, high, max]
     private static let codexLevels = [low, medium, high, xhigh]
+    private static let kimiLevels = [high]
     private static let geminiProLevels = [low, medium, high]
     private static let geminiFlashLevels = [minimal, low, medium, high]
 
@@ -189,6 +191,18 @@ enum DroidProxyModelCatalog {
             kind: .gemini,
             levelLabel: "Thinking",
             levels: geminiFlashLevels
+        ),
+        DroidProxyModelDefinition(
+            baseModel: "kimi-k2.6",
+            idSlug: "kimi-k2.6",
+            displayName: "Kimi K2.6",
+            maxOutputTokens: 262144,
+            provider: "openai",
+            providerKey: "kimi",
+            baseURL: "http://localhost:8317/v1",
+            kind: .kimi,
+            levelLabel: "Reasoning",
+            levels: kimiLevels
         )
     ]
 
@@ -219,6 +233,7 @@ enum DroidProxyModelCatalog {
         if name.hasPrefix("claude") { return "claude" }
         if name.hasPrefix("gpt") { return "codex" }
         if name.hasPrefix("gemini") { return "gemini" }
+        if name.hasPrefix("kimi-k2.6") { return "kimi" }
         return nil
     }
 

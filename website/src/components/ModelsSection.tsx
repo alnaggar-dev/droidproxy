@@ -55,6 +55,14 @@ const models = [
     max: '65,536',
     provider: 'Google',
   },
+  {
+    icon: '/assets/icon-codex.png',
+    name: 'Kimi K2.6',
+    id: 'kimi-k2.6',
+    levels: ['low', 'medium', 'high', 'max'],
+    max: '262,144',
+    provider: 'Moonshot AI',
+  },
 ]
 
 export default function ModelsSection() {
