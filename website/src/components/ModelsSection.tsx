@@ -57,8 +57,8 @@ const models = [
   },
   {
     icon: '/assets/icon-gemini.png',
-    name: 'Gemini 3 Flash',
-    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3.5 Flash',
+    id: 'gemini-3.5-flash-preview',
     levels: ['minimal', 'low', 'medium', 'high'],
     max: '65,536',
     provider: 'Google',

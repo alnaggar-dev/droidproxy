@@ -90,12 +90,12 @@ Open `~/.factory/settings.json` and add the following to the `customModels` arra
       "provider": "google"
     },
     {
-      "model": "gemini-3-flash-preview",
-      "id": "custom:droidproxy:gemini-3-flash",
+      "model": "gemini-3.5-flash-preview",
+      "id": "custom:droidproxy:gemini-3.5-flash",
       "index": 7,
       "baseUrl": "http://localhost:8317",
       "apiKey": "dummy-not-used",
-      "displayName": "DroidProxy: Gemini 3 Flash",
+      "displayName": "DroidProxy: Gemini 3.5 Flash",
       "maxOutputTokens": 65536,
       "noImageSupport": false,
       "provider": "google"
@@ -116,7 +116,7 @@ Use the standard Claude and Codex model aliases in the `model` field. Claude ent
    - GPT 5.4: `low`, `medium`, `high`, or `xhigh`
    - GPT 5.5: `low`, `medium`, `high`, or `xhigh`
    - Gemini 3.1 Pro: `low`, `medium`, or `high`
-   - Gemini 3 Flash: `minimal`, `low`, `medium`, or `high`
+   - Gemini 3.5 Flash: `minimal`, `low`, `medium`, or `high`
 
 ## 4. Enable Thinking Output
 

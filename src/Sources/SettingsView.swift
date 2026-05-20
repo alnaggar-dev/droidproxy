@@ -519,7 +519,7 @@ struct SettingsView: View {
     @AppStorage(AppPreferences.gpt54FastModeKey) private var gpt54FastMode = AppPreferences.defaultGpt54FastMode
     @AppStorage(AppPreferences.gpt55FastModeKey) private var gpt55FastMode = AppPreferences.defaultGpt55FastMode
     @AppStorage(AppPreferences.gemini31ProThinkingLevelKey) private var gemini31ProThinkingLevel = AppPreferences.defaultGemini31ProThinkingLevel
-    @AppStorage(AppPreferences.gemini3FlashThinkingLevelKey) private var gemini3FlashThinkingLevel = AppPreferences.defaultGemini3FlashThinkingLevel
+    @AppStorage(AppPreferences.gemini35FlashThinkingLevelKey) private var gemini35FlashThinkingLevel = AppPreferences.defaultGemini35FlashThinkingLevel
     @AppStorage(AppPreferences.k26ReasoningEnabledKey) private var k26ReasoningEnabled = AppPreferences.defaultK26ReasoningEnabled
     @AppStorage(AppPreferences.allowRemoteKey) private var allowRemote = AppPreferences.defaultAllowRemote
     @AppStorage(AppPreferences.secretKeyKey) private var secretKey = AppPreferences.defaultSecretKey
@@ -1069,8 +1069,8 @@ struct SettingsView: View {
                                         tint: geminiEffortSelectionColor
                                     )
                                     effortPickerRow(
-                                        "Gemini 3 Flash thinking level",
-                                        selection: $gemini3FlashThinkingLevel,
+                                        "Gemini 3.5 Flash thinking level",
+                                        selection: $gemini35FlashThinkingLevel,
                                         options: ["minimal", "low", "medium", "high"],
                                         tint: geminiEffortSelectionColor
                                     )

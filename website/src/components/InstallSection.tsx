@@ -43,7 +43,7 @@ const codePlain = `// What "Apply" writes for you — no need to touch this your
     "maxOutputTokens": 65536,
     "provider": "openai"
   }
-  // + GPT 5.3 Codex, GPT 5.4, Gemini 3 Flash
+  // + GPT 5.3 Codex, GPT 5.4, Gemini 3.5 Flash
 ]`
 
 const codeHtml = `<span class="c">// What "Apply" writes for you — no need to touch this yourself.</span>
@@ -88,7 +88,7 @@ const codeHtml = `<span class="c">// What "Apply" writes for you — no need to 
     <span class="k">"maxOutputTokens"</span>: <span class="n">65536</span>,
     <span class="k">"provider"</span>: <span class="s">"openai"</span>
   }
-  <span class="c">// + GPT 5.3 Codex, GPT 5.4, Gemini 3 Flash</span>
+  <span class="c">// + GPT 5.3 Codex, GPT 5.4, Gemini 3.5 Flash</span>
 ]`
 
 export default function InstallSection() {

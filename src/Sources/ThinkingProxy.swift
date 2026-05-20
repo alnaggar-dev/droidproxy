@@ -698,8 +698,8 @@ class ThinkingProxy {
         switch model {
         case "gemini-3.1-pro-preview":
             return AppPreferences.gemini31ProThinkingLevel
-        case "gemini-3-flash-preview":
-            return AppPreferences.gemini3FlashThinkingLevel
+        case "gemini-3.5-flash-preview":
+            return AppPreferences.gemini35FlashThinkingLevel
         default:
             return nil
         }
