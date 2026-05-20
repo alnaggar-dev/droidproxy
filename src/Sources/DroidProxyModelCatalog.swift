@@ -196,7 +196,7 @@ enum DroidProxyModelCatalog {
             baseModel: "gemini-3.5-flash",
             idSlug: "gemini-3.5-flash",
             displayName: "Gemini 3.5 Flash",
-            maxOutputTokens: 65536,
+            maxOutputTokens: 65535,
             provider: "google",
             providerKey: "gemini",
             baseURL: "http://localhost:8317",

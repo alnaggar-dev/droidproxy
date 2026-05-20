@@ -96,7 +96,7 @@ Open `~/.factory/settings.json` and add the following to the `customModels` arra
       "baseUrl": "http://localhost:8317",
       "apiKey": "dummy-not-used",
       "displayName": "DroidProxy: Gemini 3.5 Flash",
-      "maxOutputTokens": 65536,
+      "maxOutputTokens": 65535,
       "noImageSupport": false,
       "provider": "google"
     }
