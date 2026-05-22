@@ -26,6 +26,11 @@ struct OAuthAccountUsage: Identifiable, Equatable {
 
 private enum OAuthUsageParsing {
     static let requestTimeout: TimeInterval = 15
+    static let formURLEncodedAllowedCharacters: CharacterSet = {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        return allowed
+    }()
 }
 
 @MainActor
@@ -153,7 +158,7 @@ final class OAuthUsageTracker: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
-        let encodedToken = refreshToken.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedToken = refreshToken.addingPercentEncoding(withAllowedCharacters: OAuthUsageParsing.formURLEncodedAllowedCharacters) ?? ""
         let body = "client_id=9d1c250a-e61b-44d9-88ed-5944d1962f5e&grant_type=refresh_token&refresh_token=\(encodedToken)"
         request.httpBody = body.data(using: .utf8)
         
@@ -276,13 +281,14 @@ final class OAuthUsageTracker: ObservableObject {
                   let utilization = numberValue(dict["utilization"]) else {
                 continue
             }
+            let usedPercent = utilization <= 1 ? utilization * 100 : utilization
             let resetsAtStr = dict["resets_at"] as? String
             let resetDate = resetsAtStr.flatMap(parseISO8601Date)
             let resetText = resetDate.map(resetText(for:)) ?? resetsAtStr
             
             windows.append(OAuthUsageWindow(
                 title: title,
-                usedPercent: utilization,
+                usedPercent: usedPercent,
                 resetText: resetText,
                 resetDate: resetDate
             ))
@@ -414,7 +420,16 @@ final class OAuthUsageTracker: ObservableObject {
     nonisolated private static func percentValue(from dictionary: [String: Any]) -> Double? {
         for (key, value) in dictionary {
             let lower = key.lowercased()
-            guard lower.contains("percent") || lower.contains("usage") || lower.contains("used") || lower.contains("fraction") else {
+            guard lower.contains("percent") || lower.contains("percentage") || lower.contains("%") else {
+                continue
+            }
+            guard let number = numberValue(value) else { continue }
+            return number <= 1 ? number * 100 : number
+        }
+
+        for (key, value) in dictionary {
+            let lower = key.lowercased()
+            guard lower.contains("usage") || lower.contains("used") || lower.contains("fraction") else {
                 continue
             }
             guard let number = numberValue(value) else { continue }
