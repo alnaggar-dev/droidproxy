@@ -303,7 +303,6 @@ struct ServiceRow<ExtraContent: View>: View {
 struct SettingsView: View {
     @ObservedObject var serverManager: ServerManager
     @StateObject private var authManager = AuthManager()
-    @StateObject private var oauthUsageTracker = OAuthUsageTracker()
     @State private var launchAtLogin = false
     @AppStorage(AppPreferences.gpt52FastModeKey) private var gpt52FastMode = AppPreferences.defaultGpt52FastMode
     @AppStorage(AppPreferences.gpt53CodexFastModeKey) private var gpt53CodexFastMode = AppPreferences.defaultGpt53CodexFastMode
@@ -333,81 +332,6 @@ struct SettingsView: View {
     private let kimiEffortSelectionColor = Color(red: 0x00/255, green: 0xBF/255, blue: 0x91/255)
     private let oledFooterText = Color(red: 0xA8/255, green: 0xA8/255, blue: 0xA8/255)
 
-    private var oauthUsageDashboard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if oauthUsageTracker.accounts.isEmpty {
-                Text("Connect Codex or Claude OAuth accounts to show quota windows.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
-                ForEach(oauthUsageTracker.accounts) { account in
-                    oauthUsageAccountRow(account)
-                }
-            }
-        }
-        .padding(.top, 4)
-    }
-
-    private func oauthUsageAccountRow(_ account: OAuthAccountUsage) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Text(account.provider.displayName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                Text(account.email)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                Spacer()
-                if account.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.55)
-                }
-            }
-
-            if let error = account.error {
-                Text(error)
-                    .font(.caption2)
-                    .foregroundColor(.orange)
-            } else {
-                ForEach(account.windows) { window in
-                    usageWindowRow(window)
-                }
-            }
-        }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.05)))
-    }
-
-    private func usageWindowRow(_ window: OAuthUsageWindow) -> some View {
-        let remaining = window.remainingPercent
-        return VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text(window.title)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                Spacer()
-                if let remaining {
-                    Text("\(Int(remaining.rounded()))% left")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-            if let remaining {
-                ProgressView(value: remaining, total: 100)
-                    .tint(remaining < 20 ? .orange : .green)
-            } else {
-                Text("Usage unavailable")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            if let resetText = window.resetText {
-                Text(resetText)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
 
     // Translucent row background that reveals the colourful window backdrop.
     // We deliberately avoid .ultraThinMaterial here — on dark appearance it
@@ -532,25 +456,6 @@ struct SettingsView: View {
                 }
                 .listRowBackground(glassRowBackground)
 
-                if serverManager.isProviderEnabled(.codex) || authManager.hasAccounts(for: .codex) ||
-                   serverManager.isProviderEnabled(.claude) || authManager.hasAccounts(for: .claude) {
-                    Section {
-                        HStack {
-                            Text("OAuth Quota Usage")
-                            Spacer()
-                            Button(action: refreshOAuthUsage) {
-                                Image(systemName: "arrow.clockwise")
-                            }
-                            .disabled(oauthUsageTracker.isRefreshing)
-                            .buttonStyle(.plain)
-                            .foregroundColor(.secondary)
-                            .opacity(oauthUsageTracker.isRefreshing ? 0.5 : 1)
-                            .help("Refresh usage quotas")
-                        }
-                        oauthUsageDashboard
-                    }
-                    .listRowBackground(glassRowBackground)
-                }
 
                 Section {
                     Toggle("Launch at login", isOn: $launchAtLogin)
@@ -927,10 +832,6 @@ struct SettingsView: View {
             startMonitoringAuthDirectory()
             factoryModelsInstalled = checkFactoryModelsInstalled()
             challengerPluginInstalled = checkChallengerPluginInstalled()
-            refreshOAuthUsage()
-        }
-        .onChange(of: codexUsageAccountSignature) { _ in
-            refreshOAuthUsage()
         }
         .onDisappear {
             stopMonitoringAuthDirectory()
@@ -939,11 +840,6 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(authResultMessage)
-        }
-        .alert("About", isPresented: $showingInfoAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(infoAlertMessage)
         }
         .alert("About", isPresented: $showingInfoAlert) {
             Button("OK", role: .cancel) { }
@@ -984,27 +880,6 @@ struct SettingsView: View {
         }
     }
 
-    private func refreshOAuthUsage() {
-        oauthUsageTracker.refresh(
-            codexAccounts: authManager.accounts(for: .codex),
-            claudeAccounts: authManager.accounts(for: .claude)
-        )
-    }
-
-    private var codexUsageAccountSignature: String {
-        let codexSig = authManager.accounts(for: .codex)
-            .filter { !$0.isDisabled && !$0.isExpired }
-            .map(\.id)
-            .sorted()
-            .joined(separator: "|")
-        let claudeSig = authManager.accounts(for: .claude)
-            .filter { !$0.isDisabled && !$0.isExpired }
-            .map(\.id)
-            .sorted()
-            .joined(separator: "|")
-        return "\(codexSig)||\(claudeSig)"
-    }
-    
     private func openAuthFolder() {
         let authDir = AuthPaths.authDirectory
         NSWorkspace.shared.open(authDir)
