@@ -163,19 +163,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         menu.addItem(NSMenuItem(title: "Open Settings", action: #selector(openSettings), keyEquivalent: "s"))
         menu.addItem(NSMenuItem.separator())
         
-        // Usage
-        let claudeUsageItem = NSMenuItem(title: "● Claude   --", action: nil, keyEquivalent: "")
-        claudeUsageItem.tag = 200
-        menu.addItem(claudeUsageItem)
-        
-        let codexUsageItem = NSMenuItem(title: "● Codex    --", action: nil, keyEquivalent: "")
-        codexUsageItem.tag = 201
-        menu.addItem(codexUsageItem)
-        
-        let usageSeparator = NSMenuItem.separator()
-        usageSeparator.tag = 203
-        menu.addItem(usageSeparator)
-
         // Server Control
         let startStopItem = NSMenuItem(title: "Start Server", action: #selector(toggleServer), keyEquivalent: "")
         startStopItem.tag = 100
@@ -421,72 +408,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
     
     @MainActor @objc func updateUsageMenu() {
-        let showUsage = AppPreferences.showUsageInMenuBar
-        
-        menu.item(withTag: 200)?.isHidden = !showUsage
-        menu.item(withTag: 201)?.isHidden = !showUsage
-        menu.item(withTag: 203)?.isHidden = !showUsage
-        
         if statusItem.button?.title != "" {
             statusItem.button?.title = ""
-        }
-
-        guard showUsage else { return }
-
-        if let claudeItem = menu.item(withTag: 200) {
-            if let snapshot = UsageStore.shared.claudeUsage {
-                if let error = snapshot.error {
-                    claudeItem.title = "● Claude   Error: \(error)"
-                } else if snapshot.windows.isEmpty {
-                    claudeItem.title = "● Claude   No usage data"
-                } else {
-                    let hourly = snapshot.windows.first { $0.kind == .other } // We mapped 5h to other
-                    let weekly = snapshot.windows.first { $0.kind == .weekly }
-
-                    var title = "● Claude"
-                    if let h = hourly {
-                        title += String(format: "   5h: %2d%%", Int(h.percentUsed))
-                    }
-                    if let w = weekly {
-                        title += String(format: "   Week: %2d%%", Int(w.percentUsed))
-                    }
-                    if let h = hourly, let resetsAt = h.resetsAt {
-                        let diff = Int(resetsAt.timeIntervalSinceNow / 3600)
-                        title += "   (resets \(diff)h)"
-                    }
-                    claudeItem.title = title
-                }
-            } else {
-                claudeItem.title = "● Claude   Loading..."
-            }
-        }
-
-        if let codexItem = menu.item(withTag: 201) {
-            if let snapshot = UsageStore.shared.codexUsage {
-                if let error = snapshot.error {
-                    codexItem.title = "● Codex    Error: \(error)"
-                } else if snapshot.windows.isEmpty {
-                    codexItem.title = "● Codex    No usage data"
-                } else {
-                    let hourly = snapshot.windows.first { $0.kind == .other }
-                    let weekly = snapshot.windows.first { $0.kind == .weekly }
-
-                    var title = "● Codex"
-                    if let h = hourly {
-                        title += String(format: "    5h: %2d%%", Int(h.percentUsed))
-                    }
-                    if let w = weekly {
-                        title += String(format: "   Week: %2d%%", Int(w.percentUsed))
-                    }
-                    if let h = hourly, let resetsAt = h.resetsAt {
-                        let diff = Int(resetsAt.timeIntervalSinceNow / 3600)
-                        title += "   (resets \(diff)h)"
-                    }
-                    codexItem.title = title
-                }
-            } else {
-                codexItem.title = "● Codex    Loading..."
-            }
         }
     }
 
