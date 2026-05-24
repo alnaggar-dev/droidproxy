@@ -295,12 +295,17 @@ class ThinkingProxy {
             }
         }
 
-        // Rewrite /v1/responses to /v1/chat/completions for Gemini models since
-        // CLIProxyAPIPlus does not support Gemini via the Responses API endpoint.
-        if isResponsesAPIPath(rewrittenPath) && isGeminiModel(bodyString) {
+        // Rewrite /v1/responses to /v1/chat/completions only for OAuth Code Assist
+        // Gemini models (the `-preview` suffixed ones served by the gemini-cli executor),
+        // which do not support the Responses API endpoint. Antigravity-routed Gemini
+        // models (e.g. `gemini-3-flash`, `gemini-pro-agent`) DO support /v1/responses
+        // natively, so we must NOT rewrite their path — doing so would cause the
+        // backend to return chat-completions SSE that Droid CLI can't parse, hanging
+        // the stream.
+        if isResponsesAPIPath(rewrittenPath) && isOAuthCodeAssistGeminiModel(bodyString) {
             let newPath = rewrittenPath.replacingOccurrences(of: "/responses", with: "/chat/completions")
-            NSLog("[ThinkingProxy] Rewriting Gemini responses path: \(rewrittenPath) -> \(newPath)")
-            ThinkingProxy.fileLog("REWRITE PATH: \(rewrittenPath) -> \(newPath) (Gemini model)")
+            NSLog("[ThinkingProxy] Rewriting OAuth-Gemini responses path: \(rewrittenPath) -> \(newPath)")
+            ThinkingProxy.fileLog("REWRITE PATH: \(rewrittenPath) -> \(newPath) (OAuth Code Assist Gemini model)")
             rewrittenPath = newPath
         }
 
@@ -436,6 +441,21 @@ class ThinkingProxy {
             return false
         }
         return model.hasPrefix("gemini-")
+    }
+
+    /// True only for Gemini models served by the OAuth Code Assist (`gemini-cli`)
+    /// executor — these are the `-preview`-suffixed names like
+    /// `gemini-3.1-pro-preview` and `gemini-3-flash-preview`. The Code Assist
+    /// executor does not implement the Responses API, so we rewrite the path to
+    /// `/v1/chat/completions` for them. Antigravity-routed Gemini models support
+    /// `/v1/responses` natively and must NOT be rewritten.
+    private func isOAuthCodeAssistGeminiModel(_ bodyString: String) -> Bool {
+        guard let jsonData = bodyString.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+              let model = json["model"] as? String else {
+            return false
+        }
+        return model.hasPrefix("gemini-") && model.hasSuffix("-preview")
     }
 
     // MARK: - Surgical JSON string helpers

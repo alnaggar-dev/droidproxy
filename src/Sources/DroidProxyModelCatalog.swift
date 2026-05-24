@@ -63,8 +63,9 @@ enum DroidProxyModelCatalog {
     private static let claudeClassicLevels = [low, medium, high, max]
     private static let codexLevels = [low, medium, high, xhigh]
     private static let kimiLevels = [high]
-    private static let geminiProLevels = [low, medium, high]
-    private static let geminiFlashLevels = [minimal, low, medium, high]
+    // Antigravity routes reasoning tiers as distinct model IDs and exposes its own
+    // OpenAI-compat chat-completions endpoint, so each entry below is single-effort.
+    private static let geminiAntigravityLevels = [high]
 
     static let definitions: [DroidProxyModelDefinition] = [
         DroidProxyModelDefinition(
@@ -163,28 +164,68 @@ enum DroidProxyModelCatalog {
             levels: codexLevels,
             defaultLevelValue: "high"
         ),
+        // Gemini models routed through the antigravity executor via OpenAI-compatible
+        // chat-completions. provider="openai" + baseURL ending in /v1 makes Factory's
+        // Droid CLI send POST /v1/chat/completions, which the antigravity executor
+        // handles natively using the antigravity-*.json auth file.
         DroidProxyModelDefinition(
-            baseModel: "gemini-3.1-pro-preview",
+            baseModel: "gemini-pro-agent",
             idSlug: "gemini-3.1-pro",
             displayName: "Gemini 3.1 Pro",
             maxOutputTokens: 65536,
-            provider: "google",
+            provider: "openai",
             providerKey: "gemini",
-            baseURL: "http://localhost:8317",
+            baseURL: "http://localhost:8317/v1",
             kind: .gemini,
-            levels: geminiProLevels,
+            levels: geminiAntigravityLevels,
             defaultLevelValue: "high"
         ),
         DroidProxyModelDefinition(
-            baseModel: "gemini-3-flash-preview",
+            baseModel: "gemini-3.1-pro-low",
+            idSlug: "gemini-3.1-pro-low",
+            displayName: "Gemini 3.1 Pro (Low)",
+            maxOutputTokens: 65536,
+            provider: "openai",
+            providerKey: "gemini",
+            baseURL: "http://localhost:8317/v1",
+            kind: .gemini,
+            levels: geminiAntigravityLevels,
+            defaultLevelValue: "high"
+        ),
+        DroidProxyModelDefinition(
+            baseModel: "gemini-3-flash",
             idSlug: "gemini-3-flash",
             displayName: "Gemini 3 Flash",
             maxOutputTokens: 65536,
-            provider: "google",
+            provider: "openai",
             providerKey: "gemini",
-            baseURL: "http://localhost:8317",
+            baseURL: "http://localhost:8317/v1",
             kind: .gemini,
-            levels: geminiFlashLevels,
+            levels: geminiAntigravityLevels,
+            defaultLevelValue: "high"
+        ),
+        DroidProxyModelDefinition(
+            baseModel: "gemini-3.5-flash-low",
+            idSlug: "gemini-3.5-flash",
+            displayName: "Gemini 3.5 Flash",
+            maxOutputTokens: 65536,
+            provider: "openai",
+            providerKey: "gemini",
+            baseURL: "http://localhost:8317/v1",
+            kind: .gemini,
+            levels: geminiAntigravityLevels,
+            defaultLevelValue: "high"
+        ),
+        DroidProxyModelDefinition(
+            baseModel: "gemini-3.1-flash-lite",
+            idSlug: "gemini-3.1-flash-lite",
+            displayName: "Gemini 3.1 Flash Lite",
+            maxOutputTokens: 65536,
+            provider: "openai",
+            providerKey: "gemini",
+            baseURL: "http://localhost:8317/v1",
+            kind: .gemini,
+            levels: geminiAntigravityLevels,
             defaultLevelValue: "high"
         ),
         DroidProxyModelDefinition(
