@@ -3,7 +3,7 @@ import Foundation
 enum ServiceType: String, CaseIterable {
     case claude
     case codex
-    case gemini
+    case antigravity
     case kimi
 
     init?(authFileType: String) {
@@ -12,8 +12,8 @@ enum ServiceType: String, CaseIterable {
             self = .claude
         case "codex":
             self = .codex
-        case "gemini", "gemini-cli":
-            self = .gemini
+        case "antigravity", "gemini", "gemini-cli":
+            self = .antigravity
         case "kimi":
             self = .kimi
         default:
@@ -25,7 +25,7 @@ enum ServiceType: String, CaseIterable {
         switch self {
         case .claude: return "Claude Code"
         case .codex: return "Codex"
-        case .gemini: return "Gemini"
+        case .antigravity: return "Antigravity"
         case .kimi: return "Kimi"
         }
     }

@@ -185,7 +185,7 @@ enum DroidProxyModelCatalog {
             displayName: "Gemini 3.1 Pro (High)",
             maxOutputTokens: 65536,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityHighLevel,
@@ -197,7 +197,7 @@ enum DroidProxyModelCatalog {
             displayName: "Gemini 3.1 Pro (Low)",
             maxOutputTokens: 65536,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityLowLevel,
@@ -209,7 +209,7 @@ enum DroidProxyModelCatalog {
             displayName: "Gemini 3 Flash",
             maxOutputTokens: 65536,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityHighLevel,
@@ -221,7 +221,7 @@ enum DroidProxyModelCatalog {
             displayName: "Gemini 3.5 Flash",
             maxOutputTokens: 65536,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: gemini35FlashAntigravityLevels,
@@ -233,7 +233,7 @@ enum DroidProxyModelCatalog {
             displayName: "Gemini 3.5 Flash (Low)",
             maxOutputTokens: 65536,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityLowLevel,
@@ -245,7 +245,7 @@ enum DroidProxyModelCatalog {
             displayName: "Gemini 3.1 Flash Lite",
             maxOutputTokens: 65536,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityHighLevel,
@@ -257,7 +257,7 @@ enum DroidProxyModelCatalog {
             displayName: "Claude Sonnet 4.6 (Thinking)",
             maxOutputTokens: 64000,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityHighLevel,
@@ -269,7 +269,7 @@ enum DroidProxyModelCatalog {
             displayName: "Claude Opus 4.6 (Thinking)",
             maxOutputTokens: 64000,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityHighLevel,
@@ -281,7 +281,7 @@ enum DroidProxyModelCatalog {
             displayName: "GPT-OSS 120B (Medium)",
             maxOutputTokens: 32768,
             provider: "openai",
-            providerKey: "gemini",
+            providerKey: "antigravity",
             baseURL: "http://localhost:8317/v1",
             kind: .antigravity,
             levels: antigravityMediumLevel,
@@ -318,7 +318,7 @@ enum DroidProxyModelCatalog {
         guard let name = model["model"] as? String else { return nil }
         if name.hasPrefix("claude") { return "claude" }
         if name.hasPrefix("gpt") { return "codex" }
-        if name.hasPrefix("gemini") { return "gemini" }
+        if name.hasPrefix("gemini") { return "antigravity" }
         if name.hasPrefix("kimi-k2.6") { return "kimi" }
         return nil
     }

@@ -327,7 +327,7 @@ struct SettingsView: View {
     @State private var codexFastModeExpanded = true
     private let claudeEffortSelectionColor = Color(red: 0xD9/255, green: 0x77/255, blue: 0x57/255)
     private let codexEffortSelectionColor = Color(red: 0x74/255, green: 0xAA/255, blue: 0x9C/255)
-    private let geminiEffortSelectionColor = Color(red: 0x42/255, green: 0x85/255, blue: 0xF4/255)
+    private let antigravityEffortSelectionColor = Color(red: 0x42/255, green: 0x85/255, blue: 0xF4/255)
     private let kimiEffortSelectionColor = Color(red: 0x00/255, green: 0xBF/255, blue: 0x91/255)
     private let oledFooterText = Color(red: 0xA8/255, green: 0xA8/255, blue: 0xA8/255)
 
@@ -769,18 +769,18 @@ struct SettingsView: View {
                     }
 
                     ServiceRow(
-                        serviceType: .gemini,
+                        serviceType: .antigravity,
                         iconName: "icon-gemini.png",
-                        accounts: authManager.accounts(for: .gemini),
-                        isAuthenticating: authenticatingService == .gemini,
-                        helpText: "If you have multiple GCP projects, authentication will use your default project. Set your desired project as default in Google AI Studio before connecting.",
-                        isEnabled: serverManager.isProviderEnabled(.gemini),
+                        accounts: authManager.accounts(for: .antigravity),
+                        isAuthenticating: authenticatingService == .antigravity,
+                        helpText: "Uses your Antigravity subscription for the Antigravity-backed Gemini, Claude, and GPT-OSS models.",
+                        isEnabled: serverManager.isProviderEnabled(.antigravity),
                         customTitle: nil,
-                        onConnect: { connectService(.gemini) },
+                        onConnect: { connectService(.antigravity) },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled(.gemini, enabled: enabled) },
-                        toggleTint: geminiEffortSelectionColor,
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled(.antigravity, enabled: enabled) },
+                        toggleTint: antigravityEffortSelectionColor,
                         onExpandChange: { expanded in expandedRowCount += expanded ? 1 : -1 }
                     ) { EmptyView() }
 
@@ -1003,7 +1003,7 @@ struct SettingsView: View {
         switch serviceType {
         case .claude: command = .claudeLogin
         case .codex: command = .codexLogin
-        case .gemini: command = .geminiLogin
+        case .antigravity: command = .antigravityLogin
         case .kimi: command = .kimiLogin
         }
         
@@ -1031,8 +1031,8 @@ struct SettingsView: View {
             return "🌐 Browser opened for Claude Code authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials."
         case .codex:
             return "🌐 Browser opened for Codex authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials."
-        case .gemini:
-            return "🌐 Browser opened for Gemini authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials.\n\nIf having issues, run in terminal:\n/Applications/DroidProxy.app/Contents/Resources/cli-proxy-api-plus --config ~/.cli-proxy-api/merged-config.yaml -login"
+        case .antigravity:
+            return "🌐 Browser opened for Antigravity authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials.\n\nIf having issues, run in terminal:\n/Applications/DroidProxy.app/Contents/Resources/cli-proxy-api-plus --config ~/.cli-proxy-api/merged-config.yaml -antigravity-login"
         case .kimi:
             return "🌐 Browser opened for Kimi authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect your credentials."
         }
