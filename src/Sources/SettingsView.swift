@@ -305,7 +305,6 @@ struct SettingsView: View {
     @StateObject private var authManager = AuthManager()
     @StateObject private var oauthUsageTracker = OAuthUsageTracker()
     @State private var launchAtLogin = false
-    @AppStorage(AppPreferences.gpt52FastModeKey) private var gpt52FastMode = AppPreferences.defaultGpt52FastMode
     @AppStorage(AppPreferences.gpt53CodexFastModeKey) private var gpt53CodexFastMode = AppPreferences.defaultGpt53CodexFastMode
     @AppStorage(AppPreferences.gpt54FastModeKey) private var gpt54FastMode = AppPreferences.defaultGpt54FastMode
     @AppStorage(AppPreferences.gpt55FastModeKey) private var gpt55FastMode = AppPreferences.defaultGpt55FastMode
@@ -314,6 +313,7 @@ struct SettingsView: View {
     @AppStorage(AppPreferences.oledThemeKey) private var oledTheme = AppPreferences.defaultOledTheme
     @AppStorage(AppPreferences.backgroundOpacityKey) private var backgroundOpacity = AppPreferences.defaultBackgroundOpacity
     @AppStorage(AppPreferences.betaFlagKey) private var betaFlag = AppPreferences.defaultBetaFlag
+    @AppStorage(AppPreferences.verboseLoggingKey) private var verboseLogging = AppPreferences.defaultVerboseLogging
     @State private var authenticatingService: ServiceType? = nil
     @State private var showingAuthResult = false
     @State private var authResultMessage = ""
@@ -708,6 +708,26 @@ struct SettingsView: View {
                 }
                 .listRowBackground(glassRowBackground)
 
+                Section("Logging") {
+                    Toggle("Verbose logging", isOn: $verboseLogging)
+                        .onChange(of: verboseLogging) { _ in
+                            _ = serverManager.getConfigPath()
+                        }
+                        .help("Writes verbose backend request/response logs to ~/.cli-proxy-api/logs/. CLIProxyAPIPlus hot-reloads, so no restart is required.")
+
+                    HStack {
+                        Text("Logs folder")
+                        Spacer()
+                        Button("Open Logs") {
+                            openLogsFolder()
+                        }
+                        .droidGlassProminent()
+                        .controlSize(.small)
+                        .help("Opens ~/.cli-proxy-api/logs/ in Finder. Double-click any log to view it in your default text editor.")
+                    }
+                }
+                .listRowBackground(glassRowBackground)
+
                 Section("Services") {
                     ServiceRow(
                         serviceType: .claude,
@@ -759,11 +779,6 @@ struct SettingsView: View {
                                 }
                             }
                             if codexFastModeExpanded {
-                                codexFastModeToggleRow(
-                                    "GPT 5.2",
-                                    isOn: $gpt52FastMode,
-                                    helpText: "Injects service_tier=priority for GPT 5.2 Responses API requests (Codex fast mode)"
-                                )
                                 codexFastModeToggleRow(
                                     "GPT 5.3 Codex",
                                     isOn: $gpt53CodexFastMode,
@@ -1011,6 +1026,12 @@ struct SettingsView: View {
     private func openAuthFolder() {
         let authDir = AuthPaths.authDirectory
         NSWorkspace.shared.open(authDir)
+    }
+
+    private func openLogsFolder() {
+        let logsDir = AuthPaths.authDirectory.appendingPathComponent("logs")
+        try? FileManager.default.createDirectory(at: logsDir, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(logsDir)
     }
 
     private func toggleLaunchAtLogin(_ enabled: Bool) {

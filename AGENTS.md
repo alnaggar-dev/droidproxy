@@ -5,10 +5,16 @@
 The Swift package lives in `src/`. Run all `swift build`, `swift run`, and `swift package` commands from there, not from the repo root.
 
 ```bash
-# Debug build
+# Preferred dev loop: kill any running DroidProxy, rebuild the .app bundle, and
+# launch the freshly signed build. Use this instead of running create-app-bundle.sh
+# + open by hand — it guarantees the old menu-bar process and bundled
+# cli-proxy-api-plus are stopped before the new app starts.
+./dev-relaunch.sh
+
+# Debug build (no .app bundle, no relaunch)
 cd src && swift build
 
-# Run the app (menu bar app — swift run does not work for LSUIElement apps)
+# Run the app manually (menu bar app — swift run does not work for LSUIElement apps)
 # Build the .app bundle first, then open it:
 ./create-app-bundle.sh && open DroidProxy.app
 
@@ -16,6 +22,8 @@ cd src && swift build
 # Picks up CODESIGN_IDENTITY / APP_VERSION / TARGET_ARCH from env when present
 ./create-app-bundle.sh
 ```
+
+`dev-relaunch.sh` is the preferred way to run DroidProxy during development. It calls `create-app-bundle.sh` (which runs `swift build -c release` and assembles the signed `.app`) after killing any running `CLIProxyMenuBar` / `cli-proxy-api-plus` processes, then launches the fresh bundle. Do not use it for releases — those go through `.github/workflows/release.yml`.
 
 `create-app-bundle.sh` currently builds `DroidProxy.app` at the repo root and bundles resources from `src/Sources/Resources/`.
 
@@ -55,7 +63,7 @@ Reasoning effort is owned by **Droid CLI**, not the proxy. Each Factory custom m
 What it still does today:
 
 - **Anthropic-Beta rewriting**: When a Claude request has `thinking.type` of `enabled`/`adaptive`/`auto`, the proxy strips `redact-thinking-2026-02-12` from the `Anthropic-Beta` header and appends the visible-thinking beta list (interleaved-thinking, prompt-caching-scope, fast-mode, etc.). Without this, Claude emits only signed empty thinking blocks.
-- **Service tier (fast mode)** for Responses API paths (`/v1/responses`, `/api/v1/responses`): injects `"service_tier":"priority"` for `gpt-5.2`, `gpt-5.3-codex`, `gpt-5.4`, or `gpt-5.5` when `AppPreferences.gpt52FastMode`, `AppPreferences.gpt53CodexFastMode`, `AppPreferences.gpt54FastMode`, or `AppPreferences.gpt55FastMode` is enabled and the client did not already set `service_tier`. Fast mode is API priority and is independent of reasoning effort.
+- **Service tier (fast mode)** for Responses API paths (`/v1/responses`, `/api/v1/responses`): injects `"service_tier":"priority"` for `gpt-5.3-codex`, `gpt-5.4`, or `gpt-5.5` when `AppPreferences.gpt53CodexFastMode`, `AppPreferences.gpt54FastMode`, or `AppPreferences.gpt55FastMode` is enabled and the client did not already set `service_tier`. Fast mode is API priority and is independent of reasoning effort. (`gpt-5.2` is still served but no longer exposes a fast-mode toggle.)
 - **Gemini path rewrite**: `/v1/responses` (and `/api/v1/responses`) are rewritten to `/v1/chat/completions` for Gemini models since CLIProxyAPIPlus does not support Gemini via the Responses API endpoint.
 - **Amp routing**: see the `Amp routing` section below.
 - **Per-request reasoning log** to `/tmp/droidproxy-debug.log`: each `POST` emits a `REQUEST REASONING:` line that extracts just `reasoning` / `reasoning_effort` / `thinking` / `output_config` / `service_tier` / `generationConfig` from the parsed body so the actual values Droid is sending are visible without dumping the whole prompt. Example: `REQUEST REASONING: model=gpt-5.5 reasoning={"effort":"xhigh","summary":"auto"}`.
@@ -118,7 +126,7 @@ Behavior to know:
 | `src/Sources/DroidProxyModelCatalog.swift` | Authoritative catalog of DroidProxy-exposed models. Each `DroidProxyModelDefinition` carries its supported `levels` plus a `defaultLevelValue`, and `settingsEntry` always embeds Factory's native reasoning metadata (`enableThinking`, `supportedReasoningEfforts`, `defaultReasoningEffort`, `reasoningEffort`) so Droid CLI's per-session selector can expose the full level set. |
 | `src/Sources/SettingsView.swift` | SwiftUI settings UI for server status, launch-at-login, provider toggles, auth flows, the Codex fast-mode (`service_tier=priority`) subsection, the Factory custom-models Apply button, the Challenger plugin Apply button, OLED theme, background opacity, and remote-access settings. No thinking/reasoning selectors — those live in Droid CLI. |
 | `src/Sources/AuthStatus.swift` | `AuthManager`, account parsing, expiry detection, file deletion, and per-account disabled-state updates. |
-| `src/Sources/AppPreferences.swift` | UserDefaults-backed preferences: fast-mode toggles for GPT 5.2/5.3-codex/5.4/5.5; `allowRemote`, `secretKey`, `oledTheme`, `backgroundOpacity`. No thinking-effort keys — reasoning is driven entirely by Droid CLI. |
+| `src/Sources/AppPreferences.swift` | UserDefaults-backed preferences: fast-mode toggles for GPT 5.3-codex/5.4/5.5; `allowRemote`, `secretKey`, `oledTheme`, `backgroundOpacity`, `verboseLogging`. No thinking-effort keys — reasoning is driven entirely by Droid CLI. |
 | `src/Sources/OAuthUsageTracker.swift` | Reads Codex/Claude OAuth quota windows for the "OAuth Quota Usage" section in `SettingsView`. Owns its own refresh button; there is no menu-bar usage display. |
 | `src/Sources/NotificationNames.swift` | Shared `Notification.Name` constants (`serverStatusChanged`, `authDirectoryChanged`). |
 | `src/Sources/IconCatalog.swift` | Caches `NSImage` lookups from the bundle's resource path so menu-bar / settings icons aren't re-decoded per access. |
