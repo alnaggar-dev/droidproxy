@@ -11,11 +11,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - **GPT 5.2 model** -- New Codex model exposed end-to-end: per-model reasoning effort picker (`low` / `medium` / `high` / `xhigh`, default `high`), Fast Mode toggle (`service_tier=priority` on `/v1/responses` and `/api/v1/responses`), and Factory custom-models entry `custom:droidproxy:gpt-5.2`. Click Apply Factory Models again after upgrading to provision it into `~/.factory/settings.json`.
 
-### Changed
-- **Challenger GPT droid now runs on GPT 5.2** -- Both the project-level `.factory/droids/challenger-gpt.md` (previously `gpt-5.4`) and the droid installed via Apply Challenger Plugin (previously `gpt-5.5`) are unified on `custom:droidproxy:gpt-5.2`. Rationale comes from Factory's [code review benchmark](https://factory.ai/news/code-review-benchmark):
-  > A note on GPT-5.4 and GPT-5.5: both underperform GPT-5.2, but for opposite reasons. GPT-5.4 is too conservative -- it comments sparingly (2.5/PR vs the 3.2 golden average) with decent precision (56.8%) but misses too many real bugs (42.4% recall). GPT-5.5 swings the other way: it comments at the right rate (3.5/PR) but nearly half are false positives (47.5% precision). In our experiments, GPT-5.4 needs explicit severity filters and strict constraints to stay focused, while GPT-5.5 needs tighter validation to filter out noise. Models like GPT-5.2 are more naturally calibrated with general-purpose prompts, which is why they outperform both in a standardized benchmark.
-  >
-  > Top-tier quality at half the cost of Opus 4.6.
+### Removed
+- **Challenger plugin removed** -- The Challenger droids (Opus / GPT / Gemini), the Settings "Challenger Plugin" Apply button, and the bundled `.factory/droids/challenger-*.md` + `.factory/commands/challenge-*.md` files have all been removed. Any previously installed copies under `~/.factory/droids/` and `~/.factory/commands/` should be deleted manually if you no longer want them.
 
 ### Fixed
 - **Claude thinking display** -- DroidProxy now requests summarized Opus 4.7 thinking and removes the `redact-thinking-2026-02-12` beta for Claude thinking requests so Anthropic streams plaintext `thinking_delta` blocks instead of empty thinking blocks with only signatures.
@@ -23,7 +20,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Encrypted reasoning state mismatch on `/v1/responses`** ([#58](https://github.com/anand-92/droidproxy/issues/58)) -- Bundled `config.yaml` now enables `routing.session-affinity: true` (TTL `2h`). Stateful Codex Responses API turns now stay pinned to the same upstream auth, so encrypted reasoning content created on turn N is no longer replayed through a different account on turn N+1 with `400 The encrypted content ... could not be verified`.
 
 ### Changed
-- **Claude Opus 4.7 migration** -- Opus 4.6 support replaced with Opus 4.7 throughout the app: model detection (`claude-opus-4-7`), Settings UI label, Factory custom models entry (`custom:droidproxy:opus-4-7`), and the bundled Challenger droid (`challenger-opus`) now target Opus 4.7. Effort options are `low` / `medium` / `high` / `xhigh` / `max`, with a default of `xhigh` per Anthropic's recommendation for coding and agentic workloads.
+- **Claude Opus 4.7 migration** -- Opus 4.6 support replaced with Opus 4.7 throughout the app: model detection (`claude-opus-4-7`), Settings UI label, and Factory custom models entry (`custom:droidproxy:opus-4-7`) now target Opus 4.7. Effort options are `low` / `medium` / `high` / `xhigh` / `max`, with a default of `xhigh` per Anthropic's recommendation for coding and agentic workloads.
 - **Opus 4.6 Factory custom model** -- `custom:droidproxy:opus-4-6` is removed from `customModels` during Apply/Re-apply so users don't end up with stale entries alongside the new Opus 4.7 model.
 
 ### Added
