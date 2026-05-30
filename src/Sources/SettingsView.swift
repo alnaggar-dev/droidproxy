@@ -335,6 +335,7 @@ struct SettingsView: View {
     @AppStorage(AppPreferences.gpt55FastModeKey) private var gpt55FastMode = AppPreferences.defaultGpt55FastMode
     @AppStorage(AppPreferences.allowRemoteKey) private var allowRemote = AppPreferences.defaultAllowRemote
     @AppStorage(AppPreferences.secretKeyKey) private var secretKey = AppPreferences.defaultSecretKey
+    @AppStorage(AppPreferences.bindAddressKey) private var bindAddress = AppPreferences.defaultBindAddress
     @AppStorage(AppPreferences.oledThemeKey) private var oledTheme = AppPreferences.defaultOledTheme
     @AppStorage(AppPreferences.backgroundOpacityKey) private var backgroundOpacity = AppPreferences.defaultBackgroundOpacity
     @AppStorage(AppPreferences.betaFlagKey) private var betaFlag = AppPreferences.defaultBetaFlag
@@ -644,6 +645,29 @@ struct SettingsView: View {
                                 .onSubmit {
                                     _ = serverManager.getConfigPath()
                                 }
+                        }
+
+                        if betaFlag {
+                            HStack {
+                                Text("Bind address")
+                                Spacer()
+                                TextField("127.0.0.1", text: $bindAddress)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(maxWidth: 200)
+                                    .disableAutocorrection(true)
+                                    // Regenerate the merged config when the user commits the
+                                    // value (Return / focus loss), not on every keystroke — the
+                                    // previous .onChange rewrote the config file on every typed
+                                    // character. The new address applies on the next server restart.
+                                    .onSubmit {
+                                        _ = serverManager.getConfigPath()
+                                    }
+                            }
+
+                            Text("Default is 127.0.0.1. Set to 0.0.0.0 to allow access from other devices on your network (e.g. Tailscale). Requires server restart.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
 
                         if allowRemote && secretKey.isEmpty {
