@@ -111,75 +111,87 @@ class ServerManager: ObservableObject {
             return
         }
 
-        // Clean up any orphaned processes from previous crashes
-        killOrphanedProcesses()
+        // Run startup off the main thread: the orphan cleanup below shells out to
+        // pgrep/pkill (and may Thread.sleep when it finds a stale backend), which
+        // would otherwise block the UI during launch. All @Published mutations and
+        // the completion handler are hopped back to main.
+        processQueue.async { [weak self] in
+            guard let self = self else { return }
 
-        guard let bundledPath = bundledBinaryPath() else {
-            addLog("❌ Error: cli-proxy-api-plus binary not found in app bundle")
-            completion(false)
-            return
-        }
-
-        // Use config path (merged with user settings and provider exclusions)
-        let configPath = getConfigPath()
-        guard !configPath.isEmpty, FileManager.default.fileExists(atPath: configPath) else {
-            addLog("❌ Error: config.yaml not found")
-            completion(false)
-            return
-        }
-        
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: bundledPath)
-        proc.arguments = ["-config", configPath]
-
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        proc.standardOutput = outputPipe
-        proc.standardError = errorPipe
-
-        outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            guard let output = String(data: handle.availableData, encoding: .utf8), !output.isEmpty else { return }
-            self?.addLog(output)
-        }
-
-        errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            guard let output = String(data: handle.availableData, encoding: .utf8), !output.isEmpty else { return }
-            self?.addLog("⚠️ \(output)")
-        }
-
-        proc.terminationHandler = { [weak self] process in
-            // Clear pipe handlers to prevent retain cycles on the file handles.
-            outputPipe.fileHandleForReading.readabilityHandler = nil
-            errorPipe.fileHandleForReading.readabilityHandler = nil
-
-            DispatchQueue.main.async {
-                self?.isRunning = false
-                self?.addLog("Server stopped with code: \(process.terminationStatus)")
-                NotificationCenter.default.post(name: .serverStatusChanged, object: nil)
+            let finish: (Bool) -> Void = { success in
+                DispatchQueue.main.async { completion(success) }
             }
-        }
 
-        process = proc
+            // Clean up any orphaned processes from previous crashes
+            self.killOrphanedProcesses()
 
-        do {
-            try proc.run()
-            DispatchQueue.main.async { self.isRunning = true }
-            addLog("✓ Server started on port \(port)")
+            guard let bundledPath = self.bundledBinaryPath() else {
+                self.addLog("❌ Error: cli-proxy-api binary not found in app bundle")
+                finish(false)
+                return
+            }
 
-            // Give the backend a moment to actually bind before reporting success.
-            DispatchQueue.main.asyncAfter(deadline: .now() + Timing.readinessCheckDelay) { [weak self] in
-                guard let self = self else { return }
-                if let running = self.process, running.isRunning {
+            // Use config path (merged with user settings and provider exclusions)
+            let configPath = self.getConfigPath()
+            guard !configPath.isEmpty, FileManager.default.fileExists(atPath: configPath) else {
+                self.addLog("❌ Error: config.yaml not found")
+                finish(false)
+                return
+            }
+
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: bundledPath)
+            proc.arguments = ["-config", configPath]
+
+            let outputPipe = Pipe()
+            let errorPipe = Pipe()
+            proc.standardOutput = outputPipe
+            proc.standardError = errorPipe
+
+            outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                guard let output = String(data: handle.availableData, encoding: .utf8), !output.isEmpty else { return }
+                self?.addLog(output)
+            }
+
+            errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                guard let output = String(data: handle.availableData, encoding: .utf8), !output.isEmpty else { return }
+                self?.addLog("⚠️ \(output)")
+            }
+
+            proc.terminationHandler = { [weak self] process in
+                // Clear pipe handlers to prevent retain cycles on the file handles.
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
+
+                DispatchQueue.main.async {
+                    self?.isRunning = false
+                    self?.addLog("Server stopped with code: \(process.terminationStatus)")
                     NotificationCenter.default.post(name: .serverStatusChanged, object: nil)
-                    completion(true)
-                } else {
-                    self.addLog("⚠️ Server exited before becoming ready")
-                    completion(false)
                 }
             }
-        } catch {
-            addLog("❌ Failed to start server: \(error.localizedDescription)")
-            completion(false)
+
+            self.process = proc
+
+            do {
+                try proc.run()
+                DispatchQueue.main.async { self.isRunning = true }
+                self.addLog("✓ Server started on port \(self.port)")
+
+                // Give the backend a moment to actually bind before reporting success.
+                DispatchQueue.main.asyncAfter(deadline: .now() + Timing.readinessCheckDelay) { [weak self] in
+                    guard let self = self else { return }
+                    if let running = self.process, running.isRunning {
+                        NotificationCenter.default.post(name: .serverStatusChanged, object: nil)
+                        completion(true)
+                    } else {
+                        self.addLog("⚠️ Server exited before becoming ready")
+                        completion(false)
+                    }
+                }
+            } catch {
+                self.addLog("❌ Failed to start server: \(error.localizedDescription)")
+                finish(false)
+            }
         }
     }
     
@@ -228,7 +240,7 @@ class ServerManager: ObservableObject {
     func runAuthCommand(_ command: AuthCommand, completion: @escaping (Bool, String) -> Void) {
         guard let bundledPath = bundledBinaryPath(),
               let resourcePath = Bundle.main.resourcePath else {
-            completion(false, "cli-proxy-api-plus binary not found in app bundle")
+            completion(false, "cli-proxy-api binary not found in app bundle")
             return
         }
 
@@ -312,11 +324,11 @@ class ServerManager: ObservableObject {
         }
     }
 
-    /// Resolves the path to the bundled `cli-proxy-api-plus` binary, returning
+    /// Resolves the path to the bundled `cli-proxy-api` binary, returning
     /// `nil` if the resource directory or binary is missing.
     private func bundledBinaryPath() -> String? {
         guard let resourcePath = Bundle.main.resourcePath else { return nil }
-        let path = (resourcePath as NSString).appendingPathComponent("cli-proxy-api-plus")
+        let path = (resourcePath as NSString).appendingPathComponent("cli-proxy-api")
         return FileManager.default.fileExists(atPath: path) ? path : nil
     }
     
@@ -410,12 +422,26 @@ class ServerManager: ObservableObject {
         return logBuffer.elements()
     }
     
-    /// Kill any orphaned cli-proxy-api-plus processes that might be running
+    /// Exact process names to sweep for orphans. `cli-proxy-api` is the current
+    /// bundled backend; `cli-proxy-api-plus` is the legacy name, swept once so an
+    /// orphan left over from a pre-migration build can't keep holding port 8318.
+    private static let orphanProcessNames = ["cli-proxy-api", "cli-proxy-api-plus"]
+
+    /// Kill any orphaned backend processes that might be running.
     private func killOrphanedProcesses() {
-        // First check if any processes exist using pgrep
+        for name in Self.orphanProcessNames {
+            killOrphanedProcesses(named: name)
+        }
+    }
+
+    private func killOrphanedProcesses(named processName: String) {
+        // Match the exact process name (not -f against the full command line):
+        // the backend's config path is `~/.cli-proxy-api/merged-config.yaml`, so a
+        // `-f cli-proxy-api` pattern would also match unrelated processes that merely
+        // reference that directory (e.g. `tail -f ~/.cli-proxy-api/logs/...`).
         let checkTask = Process()
         checkTask.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        checkTask.arguments = ["-f", "cli-proxy-api-plus"]
+        checkTask.arguments = ["-x", processName]
         
         let outputPipe = Pipe()
         checkTask.standardOutput = outputPipe
@@ -432,12 +458,12 @@ class ServerManager: ObservableObject {
                 let pids = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
                 
                 if !pids.isEmpty {
-                    addLog("⚠️ Found orphaned server process(es): \(pids.joined(separator: ", "))")
+                    addLog("⚠️ Found orphaned server process(es) [\(processName)]: \(pids.joined(separator: ", "))")
                     
                     // Now kill them
                     let killTask = Process()
                     killTask.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-                    killTask.arguments = ["-9", "-f", "cli-proxy-api-plus"]
+                    killTask.arguments = ["-9", "-x", processName]
                     
                     try killTask.run()
                     killTask.waitUntilExit()
@@ -460,7 +486,7 @@ enum AuthCommand: Equatable {
     case antigravityLogin
     case kimiLogin
 
-    /// CLI flag passed to `cli-proxy-api-plus` for this login flow.
+    /// CLI flag passed to `cli-proxy-api` for this login flow.
     var loginFlag: String {
         switch self {
         case .claudeLogin: return "-claude-login"
