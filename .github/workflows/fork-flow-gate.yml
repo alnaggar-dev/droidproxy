@@ -1,0 +1,31 @@
+# fork-flow CI gate — the SERVER-SIDE backstop for the client-side hooks.
+#
+# The git hooks are per-clone and bypassable (--no-verify, FORK_SKIP_VERIFY=1, a
+# clone that never ran ./.fork/setup.sh, a hook manager re-pointing core.hooksPath
+# during an install). This workflow re-runs the registry gate on every push/PR to
+# custom/main, so a commit that slipped past the local gate cannot land silently
+# broken. `verify.sh --registry` is install-free BY CONTRACT (every registry Verify
+# must run on a bare clone, sub-second — see the Verify budget rule), so no
+# toolchain setup is needed here.
+#
+# Extend the job with your stack's setup + `./.fork/verify.sh` (full) if you want CI
+# to build/test too. NOTE: GitHub disables workflows on a fresh fork until you enable
+# them once (the fork's Actions tab). Off GitHub this file is inert.
+#
+# Kit-owned: refreshed by the kit installer on every install/update.
+name: fork-flow gate
+on:
+  push:
+    branches: [custom/main]
+  pull_request:
+    branches: [custom/main]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  registry-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: registry gate (merge=ours backstop + every entry's Verify)
+        run: ./.fork/verify.sh --registry

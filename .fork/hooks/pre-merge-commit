@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# .fork/hooks/pre-merge-commit — fork-flow integration gate (shared logic in _merge-gate).
+# The kit ports commit-by-commit instead of merging; this hook is a BACKSTOP for an
+# accidental `git merge`. It fires on a CLEAN `git merge` that auto-creates the merge
+# commit — the case pre-commit does NOT see (git skips pre-commit for an automatic
+# merge commit, and MERGE_HEAD is not yet on disk here). git calls this hook ONLY to
+# finalize a merge, so the gate runs unconditionally. Requires git >= 2.24.
+# Enable once per clone:  ./.fork/setup.sh   (or git config core.hooksPath .fork/hooks)
+# Escape:  git merge --no-verify   (or FORK_SKIP_VERIFY=1 git merge …)
+root="$(git rev-parse --show-toplevel 2>/dev/null)"
+g="$root/.fork/hooks/_merge-gate"
+if [ -x "$g" ]; then "$g" pre-merge-commit || exit $?; fi
+# Chain to a pre-existing hook manager's same-named hook (recorded by setup.sh in
+# fork-flow.chainHooksDir) — gate first, then theirs; their exit code decides.
+chain="$(git config fork-flow.chainHooksDir 2>/dev/null)"
+case "$chain" in "" | .fork/hooks) exit 0 ;; /*) ;; *) chain="$root/$chain" ;; esac
+# refuse to recurse: compare RESOLVED paths (symlinked prefixes alias the same dir)
+[ "$(cd "$chain" 2>/dev/null && pwd -P)" = "$(cd "$root/.fork/hooks" 2>/dev/null && pwd -P)" ] && exit 0
+[ -x "$chain/pre-merge-commit" ] && exec "$chain/pre-merge-commit" "$@"
+exit 0

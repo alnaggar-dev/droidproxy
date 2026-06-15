@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# .fork/hooks/pre-commit — fork-flow integration gate (shared logic in _merge-gate).
+# Fires when you `git commit` to finalize an integration of upstream work or a
+# registry rewrite: a port/unport commit that stages .fork/UPSTREAM (the
+# upstream-port skill), a conflicted cherry-pick finished with --continue
+# (CHERRY_PICK_HEAD), a paused merge (MERGE_HEAD), a port/unport left in progress by
+# port.sh (its state file), or a commit that stages .fork/CHANGES.md (registering /
+# retiring). It is a no-op for ordinary customization commits.
+# Enable once per clone:  ./.fork/setup.sh   (or git config core.hooksPath .fork/hooks)
+# Escape:  git commit --no-verify   (or FORK_SKIP_VERIFY=1 git commit …)
+root="$(git rev-parse --show-toplevel 2>/dev/null)"
+g="$root/.fork/hooks/_merge-gate"
+if [ -x "$g" ]; then "$g" pre-commit || exit $?; fi
+# Chain to a pre-existing hook manager's same-named hook (recorded by setup.sh in
+# fork-flow.chainHooksDir — husky, lefthook, real .git/hooks files) so the project's
+# own hooks keep running: gate first, then theirs — their exit code decides. Never
+# chain back into .fork/hooks (that would recurse).
+chain="$(git config fork-flow.chainHooksDir 2>/dev/null)"
+case "$chain" in "" | .fork/hooks) exit 0 ;; /*) ;; *) chain="$root/$chain" ;; esac
+# refuse to recurse: compare RESOLVED paths (symlinked prefixes alias the same dir)
+[ "$(cd "$chain" 2>/dev/null && pwd -P)" = "$(cd "$root/.fork/hooks" 2>/dev/null && pwd -P)" ] && exit 0
+[ -x "$chain/pre-commit" ] && exec "$chain/pre-commit" "$@"
+exit 0
