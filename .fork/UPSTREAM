@@ -22,3 +22,4 @@
 # a silent fallback. NEVER hand-edit the SHA (audit flags that as tamper); the one
 # sanctioned reset — e.g. after an upstream force-push orphans the pointer — is
 # `./.fork/port.sh init --force <sha> [ref]`.
+afbf78e401fd732505a3509e7a49d0707b208fbc upstream/main
