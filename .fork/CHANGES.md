@@ -29,3 +29,11 @@ Touches: src/Sources/Resources/cli-proxy-api
 Verify: test "$(git hash-object src/Sources/Resources/cli-proxy-api)" = 1dd9204e4fae453540ed9b7205aa3fbe429f854b
 Status: proposed-upstream
 Note: Transient early-adoption. Binary-only swap (no Swift source changes); the grok-cli-provider customization rides on this vendored proxy but its wiring is unaffected by the bump. Verify pins the exact 7.2.5 git blob (fails on the prior 7.1.76 blob 4103d423…), cheap and execution-free — no running the 40MB binary in the gate. Retire BEFORE porting the upstream commit that ships 7.2.5: once PR #145 lands on upstream/main, use the drop-change skill to revert this commit (restoring the 7.1.76 blob) and delete this entry in one commit, THEN `./.fork/port.sh next` ports upstream's 7.2.5 commit cleanly. (If this entry is still present when that commit is ported, the cherry-pick is empty since the binary already matches — it still advances the pointer, but retire this entry immediately after.)
+
+## custom: omp-agent-settings
+
+Reason: Enables the Oh My Pi agent harness for this fork via the `debugging@factory-plugins` plugin; fork-local tooling config that does not exist upstream, so it can never conflict with an upstream port.
+Touches: .omp/settings.json
+Verify: python3 -c 'import json,sys; d=json.load(open(".omp/settings.json")); sys.exit(0 if d.get("enabledPlugins",{}).get("debugging@factory-plugins") is True else 1)'
+Status: carry
+Note: Harness/tooling config only (no product behavior); registered so audit's unregistered-file scan stays clean. The registered customization is enabling the `debugging@factory-plugins` plugin, which the Verify asserts is `true` (it fails if the file is missing/corrupt or that plugin is removed or disabled). `.omp/` has no upstream counterpart, so this can never conflict with a port; introduced by the "omp setup" commit, it predates upstream porting.
